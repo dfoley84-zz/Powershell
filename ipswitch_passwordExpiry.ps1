@@ -95,7 +95,7 @@ PROCESS{
     <p>Your SFTP Username is $userName.<br>
     <p>Any FTP Account that is expired will be unable to receive their Weekly Sub Account Passwords...
     <p>To Reset Passwords please do the Following;
-    <p><li>please go to <b>https://webtransfer.vgtsi.com/thinclient/</b></li><br>
+    <p><li>please go to <b>https://</b></li><br>
     <p><li>On The Top Right Click on Change Password</li><br>
     <p><li>Enter in Your old Password followed by your New Password</li><br>
 
