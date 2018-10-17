@@ -69,7 +69,6 @@ $smtpbody = "<html>
 <p>Database Table WS_FTP_SERVER has not been successfully Restored
 <p>file name ws_ftp_server_$timestamp.bak<br>
 <p>Thanks,<p>
-VGTSI-Support<br>
 </p>
 </body>
 </html>" #End of Email Body
