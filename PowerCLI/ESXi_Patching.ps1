@@ -1,3 +1,8 @@
+###
+## Simple Script that Once Vibs are applied to a number of ESXi Hosts within a Cluster
+# Reboot Each ESXi Host within the Cluster inorder for the vibs to take effect.
+###
+
 #Parsing Jenkins Variables to PowerShell using ${env.parameterName}
 $user = ${env.user}
 $pswd = ${env.pass}
@@ -30,17 +35,14 @@ foreach ($vmhost in $vmhosts) {
     } # End Else
 }#End DO
  Until (Get-VMHost $vmhost | Where-Object {$_.ConnectionState -eq 'Maintenance'})
-
-#Upgrading ESXiHost --> To-DO
-
-
+ 
 #Rebooting ESXi Host
 Restart-VMHost $vmhost -force -Confirm:$false
 
 #Using an Until Loop -> Until PowerState is Powered-On
 Do{
     Write-Host "Server is Currently being Reborted"
-    Start-Sleep -s 400
+    Start-Sleep -s 600
     if(Get-VMHost $vmhost | Where-Object {$_.PowerState -ne 'PoweredOn'}) {
         Write-Host "Server Is Still Being Rebooted"
         Start-Sleep -s 90
@@ -77,9 +79,7 @@ if($StatusCheck | Where-Object {$_.ConnectionState -eq 'Connected'}) {
         Write-Host "ESXI HOST is Still Not In ConnectionState" $vmhost
         Break Script
 } #Exit Else 
-
 }#End If
-
 }#End ForEach
 
 
