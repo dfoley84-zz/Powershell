@@ -1,31 +1,45 @@
 
 #vCenter Variables
-$user = ''
-$pswd = ''
+$user = ${env:user}
+$pswd = ${env:pass}
 $vCenter_Servers = ""
 
-
 Connect-VIServer -Server $vCenter_Servers -User $user -Password $pswd
+Get-Datacenter -PipelineVariable dc |
+ForEach-Object -Process {
 
-$report = foreach($cluster in Get-Cluster){
-            foreach($Switch in Get-VirtualSwitch){
-            foreach($datastore in Get-Datastore){
-            foreach($Template in Get-Template){
-              $obj = New-Object PSObject -Property @{
-                  Cluster = $cluster.Name
-                  DataStore = $datastore.name
-                  Switch = $Switch.Name
-                  Template = $vm.Template
+Get-VMHost -Location $dc -PipelineVariable esx |
+
+    ForEach-Object -Process {
+        Get-Datastore -VMHost $esx -PipelineVariable ds |
+        ForEach-Object -Process {
+
+            if(Get-Template -Datastore $ds -Location $esx){
+               Get-Template -Datastore $ds -Location $esx -PipelineVariable template |
+
+               Select @{N='vCenter';E={([uri]$dc.ExtensionData.Client.ServiceUrl).Host}},
+                   @{N='Datacenter';E={$dc.Name}},
+                   @{N='Cluster';E={(Get-Cluster -VMHost $esx).Name}},
+                   @{N='Network' ;E={(Get-VirtualPortGroup -VMHost $esx).Name -join ','}},
+                   @{N='Datastore';E={$ds.Name}},
+                   @{N='Template';E={$template.Name}}
+
             }
 
-            $obj
+            else{
+
+                '' | Select @{N='vCenter';E={([uri]$dc.ExtensionData.Client.ServiceUrl).Host}},
+                   @{N='Datacenter';E={$dc.Name}},
+                   @{N='Cluster';E={(Get-Cluster -VMHost $esx).Name}},
+                   @{N='Network' ;E={(Get-VirtualPortGroup -VMHost $esx).Name -join ','}},
+                   @{N='VMHost';E={$esx.Name}},
+                   @{N='Datastore';E={$ds.Name}},
+                   @{N='Template';E={$template.Name}}
+
+            }
+
         }
 
     }
-  }
-}
 
-$report |
-
-Select Cluster,DataStore,Switch,Template |
-Export-Csv -Path C:\Scripts\Report5.csv -NoTypeInformation -UseCulture
+} | Export-Csv -Path C:\Scripts\Report6.csv -NoTypeInformation -UseCulture
