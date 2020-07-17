@@ -76,7 +76,7 @@ if ($Exists) {
         $result.MemoryGB = $Exists.MemoryGB
 
         #Checking if the Memory or CPU is Creater then the Limit Variables 
-        if($result.MemoryGB -le $vmMemory -or $result.NumCpu -le $vmCPU) {
+        if($result.MemoryGB -gt $vmMemory -or $result.NumCpu -gt $vmCPU) {
             $results += $result | Where {$Exists -notcontains $_} 
          } # End If Statment
 
