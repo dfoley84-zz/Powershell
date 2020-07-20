@@ -6,10 +6,10 @@ $user = ${env:user}
 $pswd = ${env:pass}
 
 #Email Variables
-$SMTPServer = 
+$SMTPServer =
 $EMAILRECIPIANT = 
 $From = 
-$Subject = 
+$Subject =
 
 
 #Get-Date
@@ -21,6 +21,7 @@ $deploymentChains = @()
 $deployedvms = @()
 $newVmarray = @()
 $results = @()
+$NewVM = @()
 
 #Limits 
 $vmCPU = 8
@@ -45,8 +46,7 @@ $item
 $events = Get-VIEvent -Types Info -Start $start -Finish $now -MaxSamples ([int]::MaxValue) -Server $srv 
 
 #Searching for Events with Creating or Deployed
-$deployments = $events | where {$_ -is [Vmware.vim.VmCreatedEvent]} 
-
+$deployments = $events | where {$_ -is [Vmware.vim.VmCreatedEvent]}
 
 
 #Looping Over Each Event
@@ -60,60 +60,40 @@ $deploymentChains += $dataObj
 foreach($chain in $deploymentChains) {
 #Getting Virtual Machine Name in the Events
 $newVM = ($chain.events.vm.name) #Removed $chain.events[*].vm.Name due to position of Event in Some vSphere Environments
-
-#Adding New to Array
-$deployedvms += $newVM
+$Exists = get-vm -name $newVM -ErrorAction SilentlyContinue
+if($Exists){
+    $deployedvms += $Exists | Where {$deployedvms -notcontains $_}  
+}else{
+    #Do Nothing
+}
 }
 
-#Looping Over Each VM in the Array
-foreach($newvms in $deployedvms) {
 
-$Exists = get-vm -name $newvms -ErrorAction SilentlyContinue
-if ($Exists) {
+foreach($vm in $deployedvms) {
+$vm
         $result = "" | select vmName,NumCpu,MemoryGB
-        $result.vmName = $Exists.Name 
-        $result.NumCpu = $Exists.NumCpu
-        $result.MemoryGB = $Exists.MemoryGB
+        $result.vmName = $vm.Name 
+        $result.NumCpu = $vm.NumCpu
+        $result.MemoryGB = $vm.MemoryGB
 
         #Checking if the Memory or CPU is Creater then the Limit Variables 
         if($result.MemoryGB -gt $vmMemory -or $result.NumCpu -gt $vmCPU) {
-            $results += $result | Where {$Exists -notcontains $_} 
+            $results += $result 
          } # End If Statment
-
-  } Else {
-    Write-Host "VM Not Found"
-  }
     
 } #Ending foreach($newvms in $deployedvms)
 
 $deploymentChains = @()
 $deployedvms = @()
-$newVmarray = @()
 
 Disconnect-VIServer -Server $item -confirm:$false -Force
 
 } #Ending vCenter Loop
+
+
 
 foreach($vms in $results) {
 $vms | Export-Csv -Path C:\Scripts\reportTEST.csv -NoTypeInformation -UseCulture -append
 }
 
 #Sending Email if CSV Files Exists
-$fileToCheck = "C:\Scripts\reportTEST.csv"
-if (Test-Path $fileToCheck -PathType Leaf)
-{
-$SMTPMessage = @{
-To = $EMAILRECIPIANT
-From = $From
-Subject = $Subject
-Smtpserver = $SMTPServer
-}
-$SMTPBODY = 
-@"
-
-"@
-Send-MailMessage @SMTPMessage -Body $SMTPBody -Attachments $fileToCheck
-}
-
-
-
